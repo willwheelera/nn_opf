@@ -1,6 +1,6 @@
 import numpy as np
 
-def create_Ybus():
+def create_Ybus(current_zero=False):
     # Define line data (R, X, B)
     nbus = 4
     Ybus = np.zeros((nbus, nbus), dtype=complex)
@@ -16,6 +16,8 @@ def create_Ybus():
         z = R + 1j * X
         y = 1 / z
         Bc = 1j * B / 2  # half-line charging
+        if current_zero:
+            Bc = 0
 
         f, t = int(f - 1), int(t - 1)
         Ybus[f, f] += y + Bc
@@ -23,16 +25,18 @@ def create_Ybus():
         Ybus[f, t] -= y
         Ybus[t, f] -= y
     
-    return Ybus
+    return -Ybus # negative for drawing current out
 
 def get_GBBG(Y):
     G = Y.real
     B = Y.imag
+    # Ir = G Vr - B Vi
+    # Ii = B Vr + G Vi
     return np.block([[G, -B[:, 1:]], [-B[1:], -G[1:, 1:]]]) # no 5th column for V1im
 
 
 if __name__ == "__main__":
-    Ybus = create_Ybus()
+    Ybus = create_Ybus(True)
     G = Ybus.real
     B = Ybus.imag
     GBBG = get_GBBG(Ybus)
@@ -45,6 +49,13 @@ if __name__ == "__main__":
             print(I_r.sum(axis=0), I_i.sum(axis=0))
 
     test_KCL()
+
+# base is 100MVA
+# matpower file has power in MW/MVAr
+#1  (gen)   50    30.99  
+#2  (load)  170   105.35 
+#3  (load)  200   123.94 
+#4  (gen)   80    49.58  
 
 # ----------------------------
 # Voltage magnitudes and angles (radians)
