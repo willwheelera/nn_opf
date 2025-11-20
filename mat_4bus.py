@@ -32,7 +32,22 @@ def get_GBBG(Y):
     B = Y.imag
     # Ir = G Vr - B Vi
     # Ii = B Vr + G Vi
-    return np.block([[G, -B[:, 1:]], [-B[1:], -G[1:, 1:]]]) # no 5th column for V1im
+    return np.block([[G, -B], [-B, -G]]) 
+
+def solve_powers(V, GBBG):
+    Ic = GBBG @ V
+    S = np.zeros(V.shape)
+    Vr, Vi = V[:4], V[4:]
+    Ir, Ii = Ic[:4], Ic[4:]
+    #S[0] = Ic[0] * V[0] # slack bus Vi=0
+    S[0:4] = Ir * Vr - Ii * Vi
+    S[4:8] = Ir * Vi + Ii * Vr
+    #print(f"1: {S[0]:.3f}")
+    for i in range(0, 4):
+        print(f"{i+1}: {S[i]:.3f} {S[i+4]:.3f}")
+    print(f"Generation: {-S[0] -S[3]:.3f}")
+    print(f"Losses: {-S[0] -S[3] -S[1] -S[2]:.3f}")
+    return S
 
 
 if __name__ == "__main__":
