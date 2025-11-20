@@ -2,6 +2,7 @@ import numpy as np
 from pyomo.environ import ConcreteModel, Var, Objective, SolverFactory, Expression, value, minimize, RangeSet
 import mat_4bus
 
+COST = 1e-6
 Ybus = mat_4bus.create_Ybus()
 M_np = mat_4bus.get_GBBG(Ybus)
 
@@ -18,10 +19,9 @@ def solve(target):
     N = 7
     model.I = RangeSet(0, N-1)
     model.v = Var(model.I, bounds=(-V_BOUND, V_BOUND), initialize=1.0)  # init near 1.0 helps solver
-    model.v[1] = 0
-    model.v[2] = 0
-    model.v[4] = 1
-    model.v[5] = 1
+    model.v[4] = 0.05
+    model.v[5] = 0.05
+    model.v[6] = 0.0
 
     # Create Expressions for currents i_j = sum_k M[j,k] * v_k
     def make_current_expr(m, j):
@@ -33,9 +33,11 @@ def solve(target):
     model.Q2 = Expression(expr=model.v[4] * model.i[1] + model.v[1] * model.i[4])
     model.P3 = Expression(expr=model.v[2] * model.i[2] - model.v[5] * model.i[5])
     model.Q3 = Expression(expr=model.v[5] * model.i[2] + model.v[2] * model.i[5])
+    model.P1 = Expression(expr=model.v[0] * model.i[0])
+    model.P4 = Expression(expr=model.v[3] * model.i[3] - model.v[6] * model.i[6])
 
     def objective_rule(m):
-        return objective(target, [m.P2, m.P3, m.Q2, m.Q3])
+        return objective(target, [m.P2, m.P3, m.Q2, m.Q3]) - COST * (model.P1 + model.P4)
         #return (m.P2 / P2_target - 1)**2 + (m.Q2 / Q2_target - 1)**2 + (m.P3 / P3_target - 1)**2 + (m.Q3 / Q3_target - 1)**2
 
     model.obj = Objective(rule=objective_rule, sense=minimize)
@@ -77,5 +79,5 @@ def solve_powers(V):
         print(f"{i+1}:", S[i], S[i+3])
 
 if __name__ == "__main__":
-    target = (1.800, 1.700, 1.100, 1.050)
+    target = np.array((1.800, 1.700, 1.100, 1.050)) * 1
     solve(target)
