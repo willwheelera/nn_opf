@@ -11,14 +11,14 @@ optimizer = optim.Adam(model.parameters(), lr=1e-3)
 
 # Dummy training loop
 # Suppose we have 100 samples of (P2,P3,Q2,Q3) 
-stdev = torch.tensor([0.2, 0.2, 0.05, 0.05]) 
+stdev = torch.tensor([0.3, 0.3, 0.15, 0.15]) 
 means = torch.tensor([1, 1, 0.6, 0.6])
 
 size = [40, 40, 100, 100, 400, 400, 1000, 1000]
 for i, s in enumerate(size):
-    X = (torch.randn(10, s, 4) * stdev + means) * 180
+    X = (torch.randn(15, s, 4) * stdev + means) * 18.0
     
-    for epoch in range(300):
+    for epoch in range(200):
         for x in X:
                 optimizer.zero_grad()
                 V_pred = model(x)
